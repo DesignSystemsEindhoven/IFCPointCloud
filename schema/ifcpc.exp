@@ -1,0 +1,126 @@
+
+SCHEMA ifcpc;
+
+
+USE FROM IFC4 (
+        IfcCartesianPointList,
+        IfcColourSpecification,
+        IfcElement,
+        IfcGeometricRepresentationItem,
+        IfcGrid,
+        IfcLabel,
+        IfcLengthMeasure,
+        IfcNormalisedRatioMeasure,
+        IfcParameterValue,
+        IfcRectangularTrimmedSurface,
+        IfcColourRGBList,
+        IfcPointOnSurface
+        
+        -- this should be in the official IFC4, but it is not. Filed bug report June 2015
+        -- IfcDirectionList
+);
+
+
+TYPE IfcPointCloudCoordinateSelect = SELECT
+    (IfcCartesianPointList
+    ,IfcParameterValueList
+    ,IfcGridOffsetList);
+END_TYPE;
+
+ENTITY IfcDiscreteNormalizedRatioMeasureList
+ ABSTRACT SUPERTYPE OF (ONEOF(IfcDiscreteColourRGBList, IfcDiscreteDirectionList));
+    Values      : LIST [1:?] OF LIST [3:3] OF INTEGER;
+    SampleWidth : LIST [3:3] OF INTEGER;
+END_ENTITY;
+
+ENTITY IfcDirectionList
+	SUBTYPE OF (IfcGeometricRepresentationItem);
+	DirectionList	: 	LIST [1:?] OF LIST [3:3] OF IfcParameterValue;
+END_ENTITY;
+
+ENTITY IfcDiscreteColourRGBList
+ SUBTYPE OF (IfcDiscreteNormalizedRatioMeasureList);
+END_ENTITY;
+
+ENTITY IfcDiscreteDirectionList
+ SUBTYPE OF (IfcDiscreteNormalizedRatioMeasureList);
+END_ENTITY;
+
+ENTITY IfcParameterValueList
+ ABSTRACT SUPERTYPE OF (ONEOF(IfcContinuousParameterValueList, IfcDiscreteParameterValueList))
+ SUBTYPE OF (IfcGeometricRepresentationItem);
+    WMinOffset : IfcLengthMeasure;
+    WMaxOffset : IfcLengthMeasure;
+    Surface    : IfcRectangularTrimmedSurface;
+END_ENTITY;
+
+ENTITY IfcContinuousParameterValueList
+ SUBTYPE OF (IfcParameterValueList);
+    Values : LIST [1:?] OF LIST [3:3] OF IfcParameterValue;
+END_ENTITY;
+
+ENTITY IfcDiscreteParameterValueList
+ SUBTYPE OF (IfcParameterValueList);
+    Values       : LIST [1:?] OF LIST [3:3] OF INTEGER;
+    USampleWidth : INTEGER;
+    VSampleWidth : INTEGER;
+    WSampleWidth : INTEGER;
+END_ENTITY;
+
+TYPE IfcPointCloudAttribute = SELECT
+    (IfcColourRGBList,
+     IfcDiscreteColourRGBList,
+     IfcDirectionList,
+     IfcDiscreteDirectionList);
+END_TYPE;
+
+ENTITY IfcPointCloud
+ SUBTYPE OF (IfcGeometricRepresentationItem);
+    LevelOfDetail : OPTIONAL IfcLabel;
+    Coordinates   : IfcPointCloudCoordinateSelect;
+    Attributes    : LIST [0:?] OF IfcPointCloudAttribute;
+ --WHERE
+
+    -- TODO: WHERE rule to guarantee same index lengths for 
+    (* How to maintain same length of vectors? *)
+END_ENTITY;
+
+TYPE IfcGridSelect = SELECT 
+	(IfcSurfaceGrid,
+	 IfcGrid);
+END_TYPE;
+
+ENTITY IfcSurfaceGrid
+  SUBTYPE OF (IfcGeometricRepresentationItem);
+  	Location: IfcPointOnSurface;
+  	USpacing: IfcParameterValue;
+  	VSpacing: IfcParameterValue;
+  	NumUAxes: INTEGER;
+  	NumVAxes: INTEGER;
+END_ENTITY;
+
+ENTITY IfcGridOffsetList
+ ABSTRACT SUPERTYPE OF (ONEOF (IfcContinuousGridOffsetList, IfcDiscreteGridOffsetList))
+ SUBTYPE OF (IfcGeometricRepresentationItem);
+    Grid                : IfcGridSelect;
+    MinOrthogonalOffset : IfcLengthMeasure; 
+    MaxOrthogonalOffset : IfcLengthMeasure;
+END_ENTITY;
+
+ENTITY IfcContinuousGridOffsetList
+ SUBTYPE OF (IfcGridOffsetList);
+    Offsets             : LIST [1:?] OF LIST [1:?] OF IfcParameterValue;
+END_ENTITY;
+
+ENTITY IfcDiscreteGridOffsetList
+ SUBTYPE OF (IfcGridOffsetList);
+    Offsets             : LIST [1:?] OF LIST [1:?] OF INTEGER;
+    SampleWidth         : INTEGER;
+END_ENTITY;
+
+ENTITY IfcPointCloudElement
+ SUBTYPE OF (IfcElement);
+-- TODO: Metadata a la E57 are attached through respective PSet_PointCloudCommon
+END_ENTITY;
+   
+END_SCHEMA;
